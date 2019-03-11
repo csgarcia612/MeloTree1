@@ -38,7 +38,7 @@ export function setUser(user) {
 }
 
 export function setEvents(events) {
-	console.log('setEvents in reducer', events);
+	// console.log('setEvents in reducer', events);
 	return {
 		type: SET_EVENTS,
 		payload: events
@@ -46,7 +46,7 @@ export function setEvents(events) {
 }
 
 export function setCity(city) {
-	console.log('setCity in reducer', city);
+	// console.log('setCity in reducer', city);
 	return {
 		type: SET_CITY,
 		payload: city

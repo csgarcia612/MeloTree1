@@ -4,26 +4,29 @@ const express = require('express'),
 	massive = require('massive'),
 	app = express(),
 	RedisStore = require('connect-redis')(session),
-	authController = require('./controller/Auth0_controller'),
 	cors = require('cors'),
 	graphqlHTTP = require('express-graphql'),
 	gqlConfigs = require('./graphql/graphqlConfigs'),
-	nodemailer = require('../server/controller/nodeMailer_controller');
+	auth0Controller = require('./controllers/auth0Controller'),
+	nodemailerController = require('./controllers/nodemailerController'),
+	usersController = require('./controllers/usersController'),
+	stripeController = require('./controllers/stripeController');
 
 require('dotenv').config();
-
-const stripe = require('stripe')(process.env.STRIPE_SECRET);
 
 app.use(bodyParser.json());
 
 massive(process.env.CONNECTION_STRING)
 	.then(db => {
-		// app.set("db", db);
 		exports.database = db;
-		console.log('Connected to database!');
+		console.log('Database Connection : ONLINE');
 	})
-	.catch(error => console.log(('error in connecting to db', error)));
+	.catch(error =>
+		console.log(('😡 Error with massive DB connection 😡', error))
+	);
+
 app.use(cors());
+
 app.use(
 	'/graphiql',
 	graphqlHTTP({
@@ -32,49 +35,26 @@ app.use(
 		graphiql: true
 	})
 );
+
 app.use(
 	session({
 		store: new RedisStore({ url: process.env.REDIS_URI }),
 		secret: process.env.SESSION_SECRET,
 		saveUninitialized: false,
 		resave: false,
-		cookie: { maxAge: 1000 * 60 * 60 * 24 * 7 * 2 }
+		cookie: { maxAge: 1000 * 60 * 60 * 24 * 2 }
 	})
 );
 
-app.get('/api/user-data', (req, res) => {
-	// console.log(req);
-	res.json({ user: req.session.user });
-});
+app.get('/api/user-data', usersController.getUser);
 
-app.post('/api/logout', (req, res) => {
-	req.session.destroy();
-	res.send('Logged Out Successfully');
-});
+app.get('/auth/callback', auth0Controller.login);
 
-app.get('/auth/callback', authController.login);
-app.post('/api/nodemailer', nodemailer.send);
-// app.get("/auth/user-data", authController.getUser);
-// app.post("/auth/logout", authController.logout);
+app.post('/api/logout', auth0Controller.logout);
 
-app.post('/api/stripe', (req, res, next) => {
-	console.log('stripe server req.body', req.body);
-	console.log('token on server', req.body.token);
-	const { token, state } = req.body;
-	stripe.charges.create(
-		{
-			amount: state.ticketPrice * state.ticketQuantity * 100,
-			currency: 'usd',
-			description: 'Test Stripe Credit Charge',
-			source: token.id
-		},
-		(error, charge) => {
-			console.log(error);
+app.post('/api/nodemailer', nodemailerController.send);
 
-			error ? res.status(500).send(error) : res.status(200).send(charge);
-		}
-	);
-});
+app.post('/api/stripe', stripeController.creditCharge);
 
 const PORT = 4000;
 app.listen(PORT, () => {
