@@ -4,7 +4,7 @@ const axios = require('axios'),
 module.exports = {
   login: (req, res) => {
     const { code } = req.query;
-    console.log(code);
+    console.log('***req.query.code :', code);
     const payload = {
       client_id: process.env.REACT_APP_AUTH0_CLIENT_ID,
       client_secret: process.env.AUTH0_CLIENT_SECRET,
@@ -13,10 +13,10 @@ module.exports = {
       redirect_uri: `http://${req.headers.host}/auth/callback`
     };
 
-    console.log(payload);
+    console.log('***payload: ', payload);
 
     function codeForAccessToken() {
-      console.log('codeforaccesstoken');
+      console.log('***codeforaccesstoken');
 
       return axios.post(
         `https://${process.env.REACT_APP_AUTH0_DOMAIN}/oauth/token`,
@@ -25,7 +25,7 @@ module.exports = {
     }
 
     function accessTokenForUserInfo(res) {
-      console.log('accessTokenFOrUserInfo', res.data.access_token);
+      console.log('***accessTokenForUserInfo: ', res.data.access_token);
       return axios.get(
         `https://${process.env.REACT_APP_AUTH0_DOMAIN}/userinfo?access_token=${
           res.data.access_token
@@ -34,11 +34,12 @@ module.exports = {
     }
 
     function storeUserInfo(response) {
-      console.log('user info', response.data);
+      console.log('***user info: ', response.data);
       const user = response.data;
       const db = index.database;
       return db.get_user_auth0([user.sub]).then(newUser => {
-        console.log('testing', user.sub);
+        // console.log('testing', user.sub);
+        console.log('***newUser Info: ', newUser);
 
         if (newUser.length) {
           req.session.user = {
@@ -73,7 +74,7 @@ module.exports = {
               res.redirect('/');
             })
             .catch(error => {
-              console.log(('error in create_user', error));
+              console.log(('***error in create_user: ', error));
             });
         }
       });
@@ -83,7 +84,7 @@ module.exports = {
       .then(accessTokenForUserInfo)
       .then(storeUserInfo)
       .catch(error => {
-        console.log('error in login route', error);
+        console.log('***error with login: ', error);
         res.status(500).send('something went wrong on the server.');
       });
   },

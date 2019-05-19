@@ -21,14 +21,20 @@ class home extends Component {
     this.toggleWarningModal = this.toggleWarningModal.bind(this);
   }
 
+  componentDidMount() {
+    console.log('***initial state: ', this.state);
+  }
+
   getCitySuggestions(event) {
-    console.log('getCitySuggestions Event---', event);
+    // console.log('getCitySuggestions Event---', event);
 
     const { cursorPosition, filteredCities, showSuggestedCities } = this.state;
 
     let keyPressed = event.keyCode;
 
     // console.log('keyPressed---', keyPressed);
+
+    console.log('getCitySuggestions--localState: ', this.state);
 
     if (keyPressed === 13) {
       if (showSuggestedCities === true) {
@@ -40,11 +46,14 @@ class home extends Component {
           .replace(/[-]/g, '%2D')
           .replace(/[']/g, '%27');
 
-        this.setState({
-          formatedCityName: urlCityName,
-          searchInput: filteredCities[cursorPosition].name,
-          showSuggestedCities: false
-        });
+        this.setState(
+          {
+            formatedCityName: urlCityName,
+            searchInput: filteredCities[cursorPosition].name,
+            showSuggestedCities: false
+          },
+          console.log('getCitySuggestions--enterKey-localState: ', this.state)
+        );
       } else {
         this.goToSearchResults();
       }
@@ -63,6 +72,11 @@ class home extends Component {
       // console.log('cursorPosition---', cursorPosition);
     } else {
       if (this.state.searchInput.length >= 2) {
+        console.log(
+          'getCitySuggestions--City List Axios Get Call: ',
+          this.state
+        );
+
         axios
           .get(
             `https://www.ticketmaster.com/api/localization/locations/city?boundary.country=us&city=${
@@ -70,7 +84,10 @@ class home extends Component {
             }`
           )
           .then(res => {
-            // console.log('res', res.data.locations);
+            console.log(
+              'getCitySuggestions--ticketmasterCities--res.data',
+              res.data.locations
+            );
             this.setState({
               filteredCities: res.data.locations,
               showSuggestedCities: true
@@ -92,12 +109,15 @@ class home extends Component {
       .replace(/[-]/g, '%2D')
       .replace(/[']/g, '%27');
 
+    console.log('updateSearchInput--urlCityName: ', urlCityName);
+
     this.setState({
       formatedCityName: urlCityName,
       searchInput: event.target.value
     });
-    // console.log('***searchInput:', this.state.searchInput);
-    document.addEventListener('keyup', this.getCitySuggestions);
+    console.log('***searchInput:', this.state.searchInput);
+    // ** Don't use Vanilla JavaScript here. The below code makes the event persist and without unmounting it continued to search the initial city name instead of searching the new input. The 'onKeyUp' attribute on the input field can fire the city drop down function instead of putting it on the 'event listener'. **
+    // document.addEventListener('keyup', this.getCitySuggestions);
   }
 
   // selectCity(event) {
@@ -169,7 +189,7 @@ class home extends Component {
             className='home-search-input'
             placeholder='Search by City or State'
             onChange={this.updateSearchInput}
-            onKeyUp={this.updateSearchInput}
+            onKeyUp={this.getCitySuggestions}
             value={searchInput}
           />
           <button className='homeSearchBtn' onClick={this.goToSearchResults}>

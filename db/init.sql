@@ -30,3 +30,13 @@ item_name text,
 item_price numeric(6,2),
 quantity integer
 );
+
+
+-- Following table is just for connect-pg-simple package
+CREATE TABLE "session" (
+  "sid" varchar NOT NULL COLLATE "default",
+	"sess" json NOT NULL,
+	"expire" timestamp(6) NOT NULL
+)
+WITH (OIDS=FALSE);
+ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
